@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,11 +9,33 @@ import { Prisma } from '@prisma/client'; // Importar tipos de Prisma
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
-  create(createOrderDto: CreateOrderDto) {
-    return 'Esta acción agrega una nueva orden';
+  async create(dto: CreateOrderDto) {
+    try {
+      const created = await this.prisma.orders.create({
+        data: {
+          orderId: dto.orderId.trim(),
+          source: dto.source.trim(),
+          storeId: dto.storeId.trim(),
+          bridgeId: dto.bridgeId?.trim(),
+          status: dto.status?.trim(),
+          napseStatus: dto.napseStatus?.trim(),
+          lastUpdated: dto.lastUpdated ? new Date(dto.lastUpdated) : undefined,
+          creationDate: dto.creationDate?.trim(),
+        },
+      });
+      return created;
+    } catch (err: any) {
+      // Prisma P2002
+      if (err.code === 'P2002') {
+        throw new ConflictException(
+          'Ya existe una orden con esa combinación (orderId, storeId, source).',
+        );
+      }
+      throw new InternalServerErrorException('No se pudo crear la orden');
+    }
   }
 
-   // Lógica para GET /orders (con filtros)
+    // Lógica para GET /orders (con filtros)
   findAll(query: QueryOrdersDto) {
     const { source, bridge } = query;
 
@@ -35,9 +57,9 @@ export class OrdersService {
     return this.prisma.orders.findMany({ where });
   }
 
-  // Lógica para GET /orders/ orderId
+      // Lógica para GET /orders/ orderId
   async findOne(orderId: string) {
-    // Se usa findFirst porque orderId no es la PK
+      // Se usa findFirst porque orderId no es la PK
     const order = await this.prisma.orders.findFirst({
       where: { orderId: orderId },
     });

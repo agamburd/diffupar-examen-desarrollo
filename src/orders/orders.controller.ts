@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Delete, HttpCode, HttpStatus} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
@@ -9,15 +9,15 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED) // 201 Created
   create(@Body() createOrderDto: CreateOrderDto) {
-    // Si no se cumplen las reglas de validación que NestJS devuelva un error 400 Bad Request.
     return this.ordersService.create(createOrderDto);
   }
 
   @Get()
   findAll(@Query() query: QueryOrdersDto) {
     // Gracias al ValidationPipe, NestJS valida automáticamente los parámetros de la URL
-    // contra nuestro DTO. Si algo es inválido, devuelve un 400 Bad Request.
+    // Si algo es inválido, devuelve un 400 Bad Request.
     return this.ordersService.findAll(query);
   }
 

@@ -40,7 +40,7 @@ export class CreateOrderDto {
 
   @IsISO8601()
   @IsOptional()
-  lastUpdated?: Date;
+  lastUpdated?: string;
 
   @IsString()
   @IsOptional()
